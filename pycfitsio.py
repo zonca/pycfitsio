@@ -5,7 +5,7 @@ from ctypes import *
 _cfitsio = CDLL("libcfitsio.so")
 
 class CfitsioError(exceptions.Exception):
-#TODO implement verbose error messages
+#TODO verbose error messages
     pass
 
 def open(filename):
@@ -14,16 +14,16 @@ def open(filename):
     f.open()
     return f
 
-def check_status(function):
-    def inner_func(*args, **kwargs):
-        status = c_int()
-        function(*args, **kwargs)
-        report_error(status)
-    return inner_func
+def check_status(status):
+    if status.value != 0:
+        raise CfitsioError("CFITSIO error with code %d" % status.value)
 
-def report_error(status):
-    if status != 0:
-        raise CfitsioError("CFITSIO error with code %d" % status)
+def run_check_status(function, *args):
+    status = c_long()
+    args = list(args)
+    args.append(byref(status))
+    function(*args)
+    check_status(status)
 
 class File(object):
 
@@ -32,7 +32,10 @@ class File(object):
         self.filename = filename
 
     def open(self):
-        _cfitsio.ffopen(byref(self.ptr), filename,False,byref(self.status))
+        run_check_status(_cfitsio.ffopen,byref(self.ptr), self.filename, False)
+
+    def write(self):
+        raise exceptions.NotImplementedError()
 
 class HDU(object):
 
@@ -45,3 +48,6 @@ class HDU(object):
 
     def read_all(self, name):
         return {'first':np.zeros(10), 'sec':np.zeros(20)}
+
+if __name__ == '__main__':
+    f = open("test/data.fits")
