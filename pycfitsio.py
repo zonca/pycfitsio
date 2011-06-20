@@ -1,8 +1,11 @@
 import numpy as np
 import exceptions
+from collections import OrderedDict
 from ctypes import *
 
 _cfitsio = CDLL("libcfitsio.so")
+
+TSTRING = 16
 
 class CfitsioError(exceptions.Exception):
 #TODO verbose error messages
@@ -43,12 +46,35 @@ class File(object):
             return self._HDUs
         except exceptions.AttributeError:
             self.read_HDUs()
+            return self.HDUs
+
+    def __getitem__(self, key):
+        """Returns HDU by name or index"""
+        if isinstance(key, int):
+            return self.HDUs.values()[key]
+        else:
+            return self.HDUs[key]
+
+    def read_HDUs(self):
+        self._HDUs = OrderedDict()
+        hdunum = c_int()
+        run_check_status(_cfitsio.ffthdu, self.ptr, byref(hdunum))
+        hdutype = c_int()
+        for i in range(2, hdunum.value+1):
+            run_check_status(_cfitsio.ffmahd, self.ptr, c_int(i), byref(hdutype))
+            name = c_char_p(" "*50)
+            run_check_status(_cfitsio.ffgky, self.ptr, TSTRING, "EXTNAME", name , False)
+            hdu_name = name.value
+            hdu_name.strip()
+            self._HDUs[hdu_name] = HDU(hdu_name)
 
 class HDU(object):
 
-    def __init__(self, name='', file=None):
+    def __init__(self, name=''):
         self.name = name
-        self.file = file
+
+    def __repr__(self):
+        return "HDU: %s" % self.name
 
     def read_column(self, name):
         return np.zeros(10)
@@ -58,6 +84,7 @@ class HDU(object):
 
 if __name__ == '__main__':
     f = open("test/data.fits")
-    data = f["DATA"].read_column('signal')
-    data = f[1].read_column(0)
-    data = f["DATA"].read_all()
+    print(f.HDUs)
+    #data = f["DATA"].read_column('signal')
+    #data = f[1].read_column(0)
+    #all_data = f["DATA"].read_all()
