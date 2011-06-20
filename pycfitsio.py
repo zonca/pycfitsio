@@ -37,6 +37,13 @@ class File(object):
     def write(self):
         raise exceptions.NotImplementedError()
 
+    @property
+    def HDUs(self):
+        try:
+            return self._HDUs
+        except exceptions.AttributeError:
+            self.read_HDUs()
+
 class HDU(object):
 
     def __init__(self, name='', file=None):
@@ -46,8 +53,11 @@ class HDU(object):
     def read_column(self, name):
         return np.zeros(10)
 
-    def read_all(self, name):
+    def read_all(self):
         return {'first':np.zeros(10), 'sec':np.zeros(20)}
 
 if __name__ == '__main__':
     f = open("test/data.fits")
+    data = f["DATA"].read_column('signal')
+    data = f[1].read_column(0)
+    data = f["DATA"].read_all()
