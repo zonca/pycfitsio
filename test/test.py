@@ -1,4 +1,5 @@
 import numpy as np
+
 from ctypes import *
 
 BINARY_TBL = c_int(2)
