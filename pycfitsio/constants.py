@@ -20,17 +20,9 @@ TDBLCOMPLEX= c_int(163)
 
 BINARY_TBL = c_int(2)
 
-TFORM_NP = {
-    'L':np.bool, 
-    'B':np.uint8, 
-    'I':np.int16, 
-    'J':np.int32, 
-    'K':np.int64, 
-    'E':np.float32, 
-    'D':np.float64, 
-    'C':np.complex64, 
-    'M':np.complex128
-}
+
+TFORM_NP = {'L': 'i1', 'B': 'u1', 'I': 'i2', 'J': 'i4', 'K': 'i8', 'E': 'f4',
+              'D': 'f8', 'C': 'c8', 'M': 'c16', 'A': 'a'}
 
 TFORM_FITS = {
     'L':TLOGICAL,
@@ -41,7 +33,8 @@ TFORM_FITS = {
     'E':TFLOAT,
     'D':TDOUBLE,
     'C':TCOMPLEX,
-    'M':TDBLCOMPLEX
+    'M':TDBLCOMPLEX,
+    'A':TSTRING
 }
 
 TFORM_CTYPES = {
@@ -52,6 +45,7 @@ TFORM_CTYPES = {
     'K':c_int64, 
     'E':c_float, 
     'D':c_double, 
+    'A':c_char,
     'C':None,
     'M':None
 }

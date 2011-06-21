@@ -97,7 +97,7 @@ class HDU(object):
         if isinstance(num, str):
             num = self.column_names.index(num)
         length = self.file.get_header_key("NAXIS2")
-        fits_datatype = self.file.get_header_keyword("TFORM%d" % (num+1))
+        fits_datatype = self.file.get_header_keyword("TFORM%d" % (num+1))[-1]
 
         array = np.empty(length, dtype=TFORM_NP[fits_datatype])
         run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), False, array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), False)
@@ -108,18 +108,19 @@ class HDU(object):
         try:
             return self._column_names
         except exceptions.AttributeError:
-            self.read_column_names
+            self.read_column_names()
             return self.column_names
 
     def read_column_names(self):
         self.file.move(self.name)
         num_columns = self.file.get_header_key("TFIELDS")
-        self._column_names = [self.file.get_header_key("TTYPE%d" % i) for i in range(num_columns)]
+        self._column_names = [self.file.get_header_keyword("TTYPE%d" % (i+1)) for i in range(num_columns)]
 
     def read_all(self):
         all = OrderedDict()
         for i, name in enumerate(self.column_names):
             all[name] = self.read_column(i)
+        return all
 
 if __name__ == '__main__':
     f = open("../test/data.fits")
@@ -131,4 +132,5 @@ if __name__ == '__main__':
     print(data)
     data = f[0].read_column(1)
     print(data)
+    print(f[0].read_all())
     #all_data = f["DATA"].read_all()
