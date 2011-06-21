@@ -7,7 +7,6 @@ from constants import *
 
 _cfitsio = CDLL("libcfitsio.so")
 
-
 class CfitsioError(exceptions.Exception):
 #TODO verbose error messages
     pass
@@ -16,6 +15,12 @@ def open(filename):
     """Opens fits file and returns a File object"""
     f = File(filename)
     f.open()
+    return f
+
+def create(filename):
+    """Create a new fits file and returns a File object"""
+    f = File(filename)
+    f.create()
     return f
 
 def check_status(status):
@@ -36,21 +41,27 @@ class File(object):
         self.filename = filename
         self.current_HDU = None
 
+    def __repr__(self):
+        return "Fits FILE: %s" % self.filename
+
     def get_header_key(self, name):
         value = c_long()
         run_check_status(_cfitsio.ffgky, self.ptr, TLONG, name, byref(value), False)
         return value.value
 
     def get_header_keyword(self, name):
-        value = c_char_p(" "*50)
-        run_check_status(_cfitsio.ffgky, self.ptr, TSTRING, name, value , False)
-        return value.value
+        value = (c_char*50)()
+        run_check_status(_cfitsio.ffgky, self.ptr, TSTRING, name, byref(value) , False)
+        return value.value.strip()
 
     def open(self):
-        run_check_status(_cfitsio.ffopen,byref(self.ptr), self.filename, False)
+        run_check_status(_cfitsio.ffopen, byref(self.ptr), self.filename, False)
 
-    def write(self):
-        raise exceptions.NotImplementedError()
+    def create(self):
+        run_check_status(_cfitsio.ffinit, byref(self.ptr), '!'+self.filename)
+
+    def close(self):
+        run_check_status(_cfitsio.ffclos, self.ptr)
 
     @property
     def HDUs(self):
@@ -82,6 +93,16 @@ class File(object):
         if self.current_HDU != name:
             run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name, False)
             self.current_HDU = name
+
+    def write_HDU(self, name, data):
+        """Data must be an OrderedDict of arrays"""
+        keywords_t = c_char_p * len(data)
+        ttype = keywords_t(*map(c_char_p, data.keys()))
+        tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), 0, c_char_p(name))
+        for i, (colname, colarray) in enumerate(data.iteritems()):
+            coltform = NP_TFORM[colarray.dtype.str[1:]]
+            run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1), c_longlong(1), c_longlong(len(colarray)), colarray.ctypes.data_as(POINTER(TFORM_CTYPES[coltform])))
 
 class HDU(object):
 
@@ -122,15 +143,17 @@ class HDU(object):
             all[name] = self.read_column(i)
         return all
 
+
+
 if __name__ == '__main__':
     f = open("../test/data.fits")
     print(f.HDUs)
     print(f['DATA'])
     self=f[0]
     #data = f["DATA"].read_column('signal')
-    data = f[0].read_column(0)
-    print(data)
-    data = f[0].read_column(1)
-    print(data)
-    print(f[0].read_all())
+    a = f[0].read_all()
+    self = create('../test/newdata.fits')
+    self.write_HDU('newdata',a)
+    self.close()
     #all_data = f["DATA"].read_all()
+    
