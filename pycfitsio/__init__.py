@@ -6,6 +6,7 @@ from ctypes import *
 from constants import *
 
 _cfitsio = CDLL("libcfitsio.so")
+NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
 #TODO verbose error messages
@@ -28,7 +29,7 @@ def check_status(status):
         raise CfitsioError("CFITSIO error with code %d" % status.value)
 
 def run_check_status(function, *args):
-    status = c_long()
+    status = c_int()
     args = list(args)
     args.append(byref(status))
     function(*args)
@@ -99,7 +100,7 @@ class File(object):
         keywords_t = c_char_p * len(data)
         ttype = keywords_t(*map(c_char_p, data.keys()))
         tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), 0, c_char_p(name))
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
         for i, (colname, colarray) in enumerate(data.iteritems()):
             coltform = NP_TFORM[colarray.dtype.str[1:]]
             run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1), c_longlong(1), c_longlong(len(colarray)), colarray.ctypes.data_as(POINTER(TFORM_CTYPES[coltform])))
@@ -121,7 +122,7 @@ class HDU(object):
         fits_datatype = self.file.get_header_keyword("TFORM%d" % (num+1))[-1]
 
         array = np.empty(length, dtype=TFORM_NP[fits_datatype])
-        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), False, array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), False)
+        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), False)
         return array
 
     @property
@@ -150,10 +151,9 @@ if __name__ == '__main__':
     print(f.HDUs)
     print(f['DATA'])
     self=f[0]
-    #data = f["DATA"].read_column('signal')
-    a = f[0].read_all()
-    self = create('../test/newdata.fits')
-    self.write_HDU('newdata',a)
-    self.close()
+    data = f["DATA"].read_column('signal')
+    #a = f[0].read_all()
+    #self = create('../test/newdata.fits')
+    #self.write_HDU('newdata',a)
+    #self.close()
     #all_data = f["DATA"].read_all()
-    
