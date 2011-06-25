@@ -1,6 +1,9 @@
 import numpy as np
 import exceptions
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except exceptions.ImportError:
+    from ordereddict import OrderedDict
 
 from ctypes import *
 from constants import *
@@ -14,7 +17,7 @@ class CfitsioError(exceptions.Exception):
 
 def open(filename):
     """Opens fits file and returns a File object"""
-    f = File(filename)
+    f = File(str(filename))
     f.open()
     return f
 
@@ -64,6 +67,7 @@ class File(object):
     def close(self):
         run_check_status(_cfitsio.ffclos, self.ptr)
 
+
     @property
     def HDUs(self):
         try:
@@ -86,20 +90,29 @@ class File(object):
         hdutype = c_int()
         for i in range(2, hdunum.value+1):
             run_check_status(_cfitsio.ffmahd, self.ptr, c_int(i), byref(hdutype))
-            hdu_name = self.get_header_keyword("EXTNAME")
-            hdu_name.strip()
+            try:
+                hdu_name = self.get_header_keyword("EXTNAME")
+                hdu_name.strip()
+            except CfitsioError:
+                hdu_name = "HDU%d" % (i-2)
             self._HDUs[hdu_name] = HDU(hdu_name, file=self)
 
     def move(self, name):
         if self.current_HDU != name:
-            run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name, False)
+            if name.startswith('HDU'):
+                hdutype = c_int(0)
+                run_check_status(_cfitsio.ffmahd, self.ptr, c_int(int(name[-1])+2), byref(hdutype))
+            else:
+                run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name, False)
             self.current_HDU = name
+
 
     def write_HDU(self, name, data):
         """Data must be an OrderedDict of arrays"""
         keywords_t = c_char_p * len(data)
         ttype = keywords_t(*map(c_char_p, data.keys()))
-        tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
+        tformlen = len(data.values()[0])
+        tform = keywords_t(*[str(tformlen)+NP_TFORM[col.dtype.str[1:]] for col in data.values()])
         run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
         for i, (colname, colarray) in enumerate(data.iteritems()):
             coltform = NP_TFORM[colarray.dtype.str[1:]]
@@ -122,7 +135,7 @@ class HDU(object):
         fits_datatype = self.file.get_header_keyword("TFORM%d" % (num+1))[-1]
 
         array = np.empty(length, dtype=TFORM_NP[fits_datatype])
-        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), False)
+        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), byref(NULL))
         return array
 
     @property
