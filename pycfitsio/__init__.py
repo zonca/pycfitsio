@@ -139,7 +139,12 @@ class HDU(object):
         if isinstance(num, str):
             num = self.column_names.index(num)
         length = self.file.get_header_key("NAXIS2")
-        fits_datatype = self.file.get_header_keyword("TFORM%d" % (num+1))[-1]
+        tform = self.file.get_header_keyword("TFORM%d" % (num+1))
+
+        repeat = long(tform[:-1])
+        length *= repeat
+
+        fits_datatype = tform[-1]
 
         array = np.empty(length, dtype=TFORM_NP[fits_datatype])
         run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), byref(NULL))

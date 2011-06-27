@@ -3,9 +3,9 @@ from pycfitsio import *
 _cfitsio = CDLL("libcfitsio.so")
 
 data = OrderedDict()
-data['signal'] = np.arange(1000000) 
-data['flag'] = np.ones(1000000, dtype=np.uint8)
-data['signal'] = np.append(data['signal'], [12, 343,343])
+data['signal'] = np.arange(10000000, dtype=np.double) 
+data['flag'] = np.ones(10000000, dtype=np.uint8)
+data['signal'] = np.append(data['signal'], [12, 343,343]).astype(np.double)
 data['flag'] = np.append(data['flag'], [12, 343,343]).astype(np.uint8)
 
 self = create('big.fits')
