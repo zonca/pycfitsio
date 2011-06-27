@@ -80,5 +80,14 @@ class TestPyCfitsIoWrite(unittest.TestCase):
         for name, array in hdu_content.iteritems():
             np.testing.assert_array_almost_equal(all[name], array)
 
+    def test_repeat_tform(self):
+        
+
+    def tearDown(self):
+        try:
+            os.remove(self.filename)
+        except:
+            pass
+
 if __name__ == '__main__':
     unittest.main()
