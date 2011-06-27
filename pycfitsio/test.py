@@ -81,7 +81,8 @@ class TestPyCfitsIoWrite(unittest.TestCase):
             np.testing.assert_array_almost_equal(all[name], array)
 
     def test_repeat_tform(self):
-        
+        array = open('../test/tform.fits')[0].read_column('data')
+        np.testing.assert_array_almost_equal(array, np.arange(10000))
 
     def tearDown(self):
         try:
