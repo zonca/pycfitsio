@@ -141,7 +141,10 @@ class HDU(object):
         length = self.file.get_header_key("NAXIS2")
         tform = self.file.get_header_keyword("TFORM%d" % (num+1))
 
-        repeat = long(tform[:-1])
+        if len(tform) == 1:
+            repeat = 1
+        else:
+            repeat = long(tform[:-1])
         length *= repeat
 
         fits_datatype = tform[-1]
