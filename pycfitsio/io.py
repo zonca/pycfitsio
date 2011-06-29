@@ -49,16 +49,6 @@ class File(object):
     def __repr__(self):
         return "Fits FILE: %s" % self.filename
 
-    def get_header_key(self, name):
-        value = c_long()
-        run_check_status(_cfitsio.ffgky, self.ptr, TLONG, name, byref(value), False)
-        return value.value
-
-    def get_header_keyword(self, name):
-        value = (c_char*50)()
-        run_check_status(_cfitsio.ffgky, self.ptr, TSTRING, name, byref(value) , False)
-        return value.value.strip()
-
     def open(self):
         run_check_status(_cfitsio.ffopen, byref(self.ptr), self.filename, False)
 
@@ -129,6 +119,18 @@ class HDU(object):
 
     def __repr__(self):
         return "HDU: %s" % self.name
+
+    def get_header_key(self, name):
+        self.file.move(self.name)
+        value = c_long()
+        run_check_status(_cfitsio.ffgky, self.file.ptr, TLONG, name, byref(value), False)
+        return value.value
+
+    def get_header_keyword(self, name):
+        self.file.move(self.name)
+        value = (c_char*50)()
+        run_check_status(_cfitsio.ffgky, self.file.ptr, TSTRING, name, byref(value) , False)
+        return value.value.strip()
 
     def read_column(self, num):
         self.file.move(self.name)
