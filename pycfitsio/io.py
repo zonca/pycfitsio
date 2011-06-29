@@ -68,15 +68,6 @@ class File(object):
     def close(self):
         run_check_status(_cfitsio.ffclos, self.ptr)
 
-
-    @property
-    def HDUs(self):
-        try:
-            return self._HDUs
-        except exceptions.AttributeError:
-            self.read_HDUs()
-            return self.HDUs
-
     def __getitem__(self, key):
         """Returns HDU by name or index"""
         if isinstance(key, int):
@@ -84,8 +75,9 @@ class File(object):
         else:
             return self.HDUs[key]
 
-    def read_HDUs(self):
-        self._HDUs = OrderedDict()
+    @cache
+    def HDUs(self):
+        _HDUs = OrderedDict()
         hdunum = c_int()
         run_check_status(_cfitsio.ffthdu, self.ptr, byref(hdunum))
         hdutype = c_int()
@@ -96,7 +88,8 @@ class File(object):
                 hdu_name.strip()
             except CfitsioError:
                 hdu_name = "HDU%d" % (i-2)
-            self._HDUs[hdu_name] = HDU(hdu_name, file=self)
+            _HDUs[hdu_name] = HDU(hdu_name, file=self)
+        return _HDUs
 
     def move(self, name):
         if self.current_HDU != name:
