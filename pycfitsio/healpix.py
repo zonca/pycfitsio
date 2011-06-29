@@ -14,6 +14,8 @@ def read_map(filename, columns=None):
 
     if columns is None:
         return first_hdu.read_all(), first_hdu.header
+    else:
+        raise exceptions.NotImplementedError('For now only supported reading all columns')
 
 if __name__ == '__main__':
     d, h = read_map('../test/data.fits')
