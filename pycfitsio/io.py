@@ -1,5 +1,6 @@
 import numpy as np
 import exceptions
+from decorator import cache
 try:
     from collections import OrderedDict
 except exceptions.ImportError:
@@ -108,22 +109,23 @@ class File(object):
 
 
     def write_HDU(self, name, data):
-        """Data must be an OrderedDict of arrays"""
-        keywords_t = c_char_p * len(data)
-        ttype = keywords_t(*map(c_char_p, data.keys()))
-        data_length = len(data.values()[0])
-        tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
+        """Data must be a numpy array with named dtype"""
+        column_names = data.dtype.names
+        keywords_t = c_char_p * len(column_names)
+        ttype = keywords_t(*map(c_char_p, column_names))
+        tform = keywords_t(*[NP_TFORM[data[colname].dtype.str[1:]] for colname in column_names])
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
 
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
 
-        for k in range(0,len(data.values()[0]),buffer_size.value):
-            if (k+buffer_size.value) > data_length:
-                buffer_size = c_long(data_length - k)
-            for i, (colname, colarray) in enumerate(data.iteritems()):
-                coltform = NP_TFORM[colarray.dtype.str[1:]]
-                run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), colarray[k:].ctypes.data_as(POINTER(TFORM_CTYPES[coltform])))
+        for k in range(0,data.size,buffer_size.value):
+            if (k+buffer_size.value) > data.size:
+                buffer_size = c_long(data.size - k)
+            for i, colname in enumerate(column_names):
+                np_dtype = data[colname].dtype.str[1:]
+                coltform = NP_TFORM[np_dtype]
+                run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), data[colname][k:].ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
 
 class HDU(object):
 
@@ -138,42 +140,49 @@ class HDU(object):
         self.file.move(self.name)
         if isinstance(num, str):
             num = self.column_names.index(num)
-        length = self.file.get_header_key("NAXIS2")
-        tform = self.file.get_header_keyword("TFORM%d" % (num+1))
-
-        if len(tform) == 1:
-            repeat = 1
-        else:
-            repeat = long(tform[:-1])
-        length *= repeat
-
-        fits_datatype = tform[-1]
-
-        array = np.empty(length, dtype=TFORM_NP[fits_datatype])
-        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[fits_datatype], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[fits_datatype])), byref(NULL))
+        array = np.empty(self.length, dtype=self.dtype[num])
+        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[self.fits_datatypes[num]], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(self.length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[self.dtype[num].str[1:]])), byref(NULL))
         return array
 
     @property
     def column_names(self):
-        try:
-            return self._column_names
-        except exceptions.AttributeError:
-            self.read_column_names()
-            return self.column_names
+        return self.dtype.names
 
-    def read_column_names(self):
+    @cache
+    def length(self):
         self.file.move(self.name)
-        num_columns = self.file.get_header_key("TFIELDS")
-        self._column_names = [self.file.get_header_keyword("TTYPE%d" % (i+1)) for i in range(num_columns)]
+        length = self.file.get_header_key("NAXIS2")
+        #check repeat
+        tform = self.file.get_header_keyword("TFORM1")
+        if len(tform) > 1:
+            length *= long(tform[:-1])
+        return length
+
+    @cache
+    def fits_datatypes(self):
+        self.file.move(self.name)
+        return [self.file.get_header_keyword("TFORM%d" % (num+1))[-1] for num in range(self.num_columns)]
+
+    @cache
+    def num_columns(self):
+        self.file.move(self.name)
+        return self.file.get_header_key("TFIELDS")
+
+    @cache
+    def dtype(self):
+        self.file.move(self.name)
+        data_dtype = []
+        for num, fits_datatype in enumerate(self.fits_datatypes):
+            data_dtype.append((self.file.get_header_keyword("TTYPE%d" % (num+1)), TFORM_NP[fits_datatype]))
+        return np.dtype(data_dtype)
 
     def read_all(self):
-        """Read columns into OrderedDict"""
-        all = OrderedDict()
+        """Read columns into numpy array"""
+        data = np.empty(self.length, dtype=self.dtype)
+        #TODO implement buffered read
         for i, name in enumerate(self.column_names):
-            all[name] = self.read_column(i)
-        return all
-
-
+            data[name] = self.read_column(i)
+        return data
 
 if __name__ == '__main__':
     f = open("../test/data.fits")
@@ -181,8 +190,8 @@ if __name__ == '__main__':
     print(f['DATA'])
     self=f[0]
     data = f["DATA"].read_column('signal')
-    #a = f[0].read_all()
-    #self = create('../test/newdata.fits')
-    #self.write_HDU('newdata',a)
+    a = f[0].read_all()
+    self = create('../test/newdata.fits')
+    self.write_HDU('newdata',a)
     #self.close()
     #all_data = f["DATA"].read_all()

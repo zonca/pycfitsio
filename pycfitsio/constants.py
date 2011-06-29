@@ -40,14 +40,14 @@ TFORM_FITS = {
 }
 
 TFORM_CTYPES = {
-    'L':c_bool, 
-    'B':c_uint8, 
-    'I':c_int16, 
-    'J':c_int32, 
-    'K':c_int64, 
-    'E':c_float, 
-    'D':c_double, 
-    'A':c_char,
-    'C':None,
-    'M':None
+    'i1':c_bool, 
+    'u1':c_uint8, 
+    'i2':c_int16, 
+    'i4':c_int32, 
+    'i8':c_int64, 
+    'f4':c_float, 
+    'f8':c_double, 
+    'a':c_char,
+    'c8':None,
+    'c16':None
 }

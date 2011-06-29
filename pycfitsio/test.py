@@ -1,11 +1,14 @@
-from __init__ import *
+from pycfitsio import *
+import numpy as np
 import os
 import unittest
 
-hdu_content = OrderedDict()
+hdu_content = np.empty(1000, dtype=np.dtype([
+                                    ('signal', np.double),
+                                    ('flag', np.uint8)
+                                    ]))
 hdu_content['signal'] = np.arange(1000)
-hdu_content['flag'] = np.ones(1000, dtype=np.uint8)
-
+hdu_content['flag'] = np.ones(1000)
 
 class TestPyCfitsIoRead(unittest.TestCase):
 
@@ -35,22 +38,22 @@ class TestPyCfitsIoRead(unittest.TestCase):
 
     def test_colnames(self):
         f = open(self.filename)
-        self.assertEqual(f[0].column_names, hdu_content.keys())
+        self.assertEqual(f[0].column_names, hdu_content.dtype.names)
 
     def test_read_col(self):
         f = open(self.filename)
         h = f[0]
-        for i, (name, array) in enumerate(hdu_content.iteritems()):
-            np.testing.assert_array_almost_equal(h.read_column(i), array)
-            np.testing.assert_array_almost_equal(h.read_column(name), array)
+        for i, name in enumerate(hdu_content.dtype.names):
+            np.testing.assert_array_almost_equal(h.read_column(i), hdu_content[name])
+            np.testing.assert_array_almost_equal(h.read_column(name), hdu_content[name])
 
     def test_all_cols(self):
         f = open(self.filename)
-        all = f[0].read_all()
-        self.assertTrue(isinstance(all, OrderedDict))
-        self.assertEqual(all.keys(), hdu_content.keys())
-        for name, array in hdu_content.iteritems():
-            np.testing.assert_array_almost_equal(all[name], array)
+        data = f[0].read_all()
+        self.assertTrue(isinstance(data, np.ndarray))
+        self.assertEqual(data.dtype.names, hdu_content.dtype.names)
+        for name in hdu_content.dtype.names:
+            np.testing.assert_array_almost_equal(data[name], hdu_content[name])
 
 class TestPyCfitsIoWrite(unittest.TestCase):
 
@@ -73,12 +76,11 @@ class TestPyCfitsIoWrite(unittest.TestCase):
         fw.write_HDU("NEWDATA", hdu_content)
         fw.close()
         f = open(self.filename)
-        all = f[0].read_all()
-        self.assertTrue(isinstance(all, OrderedDict))
-        self.assertEqual(all.keys(), hdu_content.keys())
+        data = f[0].read_all()
+        self.assertTrue(isinstance(data, np.ndarray))
         self.assertEqual(f[0].name, "NEWDATA")
-        for name, array in hdu_content.iteritems():
-            np.testing.assert_array_almost_equal(all[name], array)
+        for name in data.dtype.names:
+            np.testing.assert_array_almost_equal(data[name], hdu_content[name])
 
     def test_repeat_tform(self):
         array = open('../test/tform.fits')[0].read_column('data')

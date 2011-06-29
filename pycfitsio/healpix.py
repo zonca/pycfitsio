@@ -1,4 +1,4 @@
-from __init__ import *
+from io import *
 
 HEALPIX_KEYS = ['NSIDE', 'ORDERING', 'BAD_DATA', 'COORDSYS']
 
@@ -13,5 +13,3 @@ def read_map(filename, columns=None, header_keys=HEALPIX_KEYS):
 
     if columns is None:
         data = first_hdu.read_all()
-
-
