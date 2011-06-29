@@ -125,7 +125,8 @@ class File(object):
             for i, colname in enumerate(column_names):
                 np_dtype = data[colname].dtype.str[1:]
                 coltform = NP_TFORM[np_dtype]
-                run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), data[colname][k:].ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
+                contiguous_data = np.ascontiguousarray(data[colname][k:])
+                run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
 
 class HDU(object):
 
@@ -193,5 +194,5 @@ if __name__ == '__main__':
     a = f[0].read_all()
     self = create('../test/newdata.fits')
     self.write_HDU('newdata',a)
-    #self.close()
+    self.close()
     #all_data = f["DATA"].read_all()
