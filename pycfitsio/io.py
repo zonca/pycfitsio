@@ -73,19 +73,17 @@ class File(object):
         hdutype = c_int()
         for i in range(2, hdunum.value+1):
             run_check_status(_cfitsio.ffmahd, self.ptr, c_int(i), byref(hdutype))
-            try:
-                hdu_name = self.get_header_keyword("EXTNAME")
-                hdu_name.strip()
-            except CfitsioError:
-                hdu_name = "HDU%d" % (i-2)
-            _HDUs[hdu_name] = HDU(hdu_name, file=self)
+            hdu = HDU(i-2, file=self)
+            _HDUs[hdu.name] = hdu
         return _HDUs
 
     def move(self, name):
         if self.current_HDU != name:
-            if name.startswith('HDU'):
+            if isinstance(name, int):
                 hdutype = c_int(0)
-                run_check_status(_cfitsio.ffmahd, self.ptr, c_int(int(name[-1])+2), byref(hdutype))
+                run_check_status(_cfitsio.ffmahd, self.ptr, c_int(name+2), byref(hdutype))
+            elif name.startswith('HDU'):
+                self.move(int(name[-1]))
             else:
                 run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name, False)
             self.current_HDU = name
@@ -113,27 +111,36 @@ class File(object):
 
 class HDU(object):
 
-    def __init__(self, name='', file=None):
-        self.name = name
+    def __init__(self, num=0, file=None):
+        self.num = num
         self.file = file
+        try:
+            self.name = self.get_header_keyword("EXTNAME").strip()
+        except CfitsioError:
+            self.name = "HDU%d" % num
+
+    #TODO implement self.file.move as a decorator
+    #def move(self):
+    #    def newf():
+    #        self.file.move(self.name)
 
     def __repr__(self):
         return "HDU: %s" % self.name
 
     def get_header_key(self, name):
-        self.file.move(self.name)
+        self.file.move(self.num)
         value = c_long()
         run_check_status(_cfitsio.ffgky, self.file.ptr, TLONG, name, byref(value), False)
         return value.value
 
     def get_header_keyword(self, name):
-        self.file.move(self.name)
+        self.file.move(self.num)
         value = (c_char*50)()
         run_check_status(_cfitsio.ffgky, self.file.ptr, TSTRING, name, byref(value) , False)
         return value.value.strip()
 
     def read_column(self, num):
-        self.file.move(self.name)
+        self.file.move(self.num)
         if isinstance(num, str):
             num = self.column_names.index(num)
         array = np.empty(self.length, dtype=self.dtype[num])
@@ -147,29 +154,43 @@ class HDU(object):
     @cache
     def length(self):
         self.file.move(self.name)
-        length = self.file.get_header_key("NAXIS2")
+        length = self.get_header_key("NAXIS2")
         #check repeat
-        tform = self.file.get_header_keyword("TFORM1")
+        tform = self.get_header_keyword("TFORM1")
         if len(tform) > 1:
             length *= long(tform[:-1])
         return length
 
     @cache
     def fits_datatypes(self):
-        self.file.move(self.name)
-        return [self.file.get_header_keyword("TFORM%d" % (num+1))[-1] for num in range(self.num_columns)]
+        self.file.move(self.num)
+        return [self.get_header_keyword("TFORM%d" % (num+1))[-1] for num in range(self.num_columns)]
 
     @cache
     def num_columns(self):
-        self.file.move(self.name)
-        return self.file.get_header_key("TFIELDS")
+        self.file.move(self.num)
+        return self.get_header_key("TFIELDS")
+
+    @cache
+    def header(self):
+        self.file.move(self.num)
+        keysexist, numkeys = c_int(0), c_int(0)
+        run_check_status(_cfitsio.ffghsp, self.file.ptr, byref(keysexist), byref(numkeys))
+        header = {}
+        for i in range(1, keysexist.value+1):
+            name = (c_char*50)()
+            value = (c_char*50)()
+            comment = (c_char*50)()
+            run_check_status(_cfitsio.ffgkyn, self.file.ptr, c_int(i), byref(name), byref(value), byref(comment))
+            header[name.value] = value.value.replace("'","").strip()
+        return header
 
     @cache
     def dtype(self):
-        self.file.move(self.name)
+        self.file.move(self.num)
         data_dtype = []
         for num, fits_datatype in enumerate(self.fits_datatypes):
-            data_dtype.append((self.file.get_header_keyword("TTYPE%d" % (num+1)), TFORM_NP[fits_datatype]))
+            data_dtype.append((self.get_header_keyword("TTYPE%d" % (num+1)), TFORM_NP[fits_datatype]))
         return np.dtype(data_dtype)
 
     def read_all(self):
@@ -190,4 +211,5 @@ if __name__ == '__main__':
     self = create('../test/newdata.fits')
     self.write_HDU('newdata',a)
     self.close()
+    print(f[0].header)
     #all_data = f["DATA"].read_all()
