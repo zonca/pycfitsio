@@ -109,6 +109,25 @@ class File(object):
                 contiguous_data = np.ascontiguousarray(data[colname][k:])
                 run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
 
+    def write_HDU_dict(self, name, data):
+        """Data must be an OrderedDict of arrays"""
+        keywords_t = c_char_p * len(data)
+        ttype = keywords_t(*map(c_char_p, data.keys()))
+        data_length = len(data.values()[0])
+        tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
+    
+        buffer_size = c_long(1)
+        run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
+    
+        for k in range(0,len(data.values()[0]),buffer_size.value):
+            if (k+buffer_size.value) > data_length:
+                buffer_size = c_long(data_length - k)
+            for i, (colname, colarray) in enumerate(data.iteritems()):
+                np_dtype = colarray.dtype.str[1:]
+                coltform = NP_TFORM[np_dtype]
+                run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), colarray[k:].ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
+
 class HDU(object):
 
     def __init__(self, num=0, file=None):
