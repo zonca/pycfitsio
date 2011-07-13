@@ -8,8 +8,9 @@ except exceptions.ImportError:
 
 from ctypes import *
 from constants import *
+import ctypes.util
 
-_cfitsio = CDLL("libcfitsio.so")
+_cfitsio = CDLL(ctypes.util.find_library("libcfitsio"))
 NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
