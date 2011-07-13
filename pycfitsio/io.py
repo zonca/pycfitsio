@@ -212,9 +212,12 @@ class HDU(object):
             data_dtype.append((self.get_header_keyword("TTYPE%d" % (num+1)), TFORM_NP[fits_datatype]))
         return np.dtype(data_dtype)
 
-    def read_all(self):
+    def read_all(self, asodict=False):
         """Read columns into numpy array"""
-        data = np.empty(self.length, dtype=self.dtype)
+        if asodict:
+            data = OrderedDict()
+        else:
+            data = np.empty(self.length, dtype=self.dtype)
         #TODO implement buffered read
         for i, name in enumerate(self.column_names):
             data[name] = self.read_column(i)
