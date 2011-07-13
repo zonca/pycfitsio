@@ -10,7 +10,7 @@ from ctypes import *
 from constants import *
 import ctypes.util
 
-_cfitsio = CDLL(ctypes.util.find_library("libcfitsio"))
+_cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
 NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
