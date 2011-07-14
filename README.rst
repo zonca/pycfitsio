@@ -8,6 +8,18 @@ Features
 * read binary tables using hdu and column names into simple dictionaries of arrays
 * write FITS files incrementally 1 HDU at a time
 
+Requirements
+============
+pycfitsio requires the dynamic library cfitsio, in linux it usually packaged as libcfitsio-dev
+
+Install
+=======
+
+    pip install pycfitsio #stable version
+
+    # for development version clone from github and run
+    python setup.py install
+
 Examples
 =======
 
