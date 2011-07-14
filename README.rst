@@ -34,7 +34,7 @@ _______
 
        (992.0, 1), (993.0, 1), (994.0, 1), (995.0, 1), (996.0, 1),
        (997.0, 1), (998.0, 1), (999.0, 1)], 
-       dtype=[('signal', '<f8'), ('flag', '|u1')])
+       dtype=[('signal', '<f8'), ('flag', ' u1')])
 
     #read columns as OrderedDict of arrays
     all_columns = f['DATA'].read_all(asodict=True)
