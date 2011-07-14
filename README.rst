@@ -1,11 +1,18 @@
+============================================
 pycfitsio: Python ctypes wrapper for cfitsio
+============================================
 
-Features:
+Features
+========
 
 * read binary tables using hdu and column names into simple dictionaries of arrays
 * write FITS files incrementally 1 HDU at a time
 
-Reading:
+Examples
+=======
+
+Reading
+_______
 
     f = pycfitsio.open("test/data.fits")
 
@@ -22,7 +29,9 @@ Reading:
     print(all_columns)
     OrderedDict([('signal', array([   0., 1. ....])), 'flag', array([1, 1, ....])])
 
-Writing:    
+Writing    
+_______
+
     from collections import OrderedDict
     f = pycfitsio.create('file.fits')
     f.write_HDU_dict('OBT', OrderedDict(
