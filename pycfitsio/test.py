@@ -13,7 +13,7 @@ hdu_content['flag'] = np.ones(1000)
 class TestPyCfitsIoRead(unittest.TestCase):
 
     def setUp(self):
-        self.filename = "../test/data.fits"
+        self.filename = "../debug/data.fits"
         self.hdus = 1
         self.hduname = "DATA"
         self.len = 1000
@@ -40,6 +40,7 @@ class TestPyCfitsIoRead(unittest.TestCase):
         f = open(self.filename)
         self.assertEqual(f[0].column_names, hdu_content.dtype.names)
 
+
     def test_read_col(self):
         f = open(self.filename)
         h = f[0]
@@ -55,10 +56,17 @@ class TestPyCfitsIoRead(unittest.TestCase):
         for name in hdu_content.dtype.names:
             np.testing.assert_array_almost_equal(data[name], hdu_content[name])
 
+    def test_read(self):
+        data, header = read(self.filename)
+        self.assertTrue(isinstance(data, np.ndarray))
+        self.assertEqual(data.dtype.names, hdu_content.dtype.names)
+        for name in hdu_content.dtype.names:
+            np.testing.assert_array_almost_equal(data[name], hdu_content[name])
+
 class TestPyCfitsIoWrite(unittest.TestCase):
 
     def setUp(self):
-        self.filename = "../test/newdata.fits"
+        self.filename = "../debug/newdata.fits"
         try:
             os.remove(self.filename)
         except:
@@ -83,7 +91,7 @@ class TestPyCfitsIoWrite(unittest.TestCase):
             np.testing.assert_array_almost_equal(data[name], hdu_content[name])
 
     def test_repeat_tform(self):
-        array = open('../test/tform.fits')[0].read_column('data')
+        array = open('../debug/tform.fits')[0].read_column('data')
         np.testing.assert_array_almost_equal(array, np.arange(10000))
 
     def tearDown(self):

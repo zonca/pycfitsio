@@ -1,12 +1,14 @@
 import numpy as np
 import exceptions
-from decorator import cache
 try:
     from collections import OrderedDict
 except exceptions.ImportError:
     from ordereddict import OrderedDict
-
+from contextlib import closing
 from ctypes import *
+
+from decorator import cache
+
 from constants import *
 import ctypes.util
 
@@ -22,6 +24,16 @@ def open(filename):
     f = File(str(filename))
     f.open()
     return f
+
+def read(filename, HDU=0):
+    """Quick function for reading one HDU and header
+
+    HDU is name or index of HDU, default 0
+    Returns the data array and a header dictionary"""
+
+    #TODO context manager
+    with closing(open(filename)) as f:
+        return f[HDU].read_all(), f[HDU].header
 
 def create(filename):
     """Create a new fits file and returns a File object"""
