@@ -9,7 +9,7 @@ setup(
     author = "Andrea Zonca",
     author_email = "code@andreazonca.com",
     description = "Simple FITS files I/O package",
-    license='LICENSE.txt',
+    license='GPL3',
     keywords = "fits, astrophysics, pyfits",
     url = "http://github.com/zonca/pycfitsio",
     classifiers=[
