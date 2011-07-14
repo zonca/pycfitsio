@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name = "pycfitsio",
-    version = "0.1.1",
+    version = "0.1.2",
 
     packages=['pycfitsio', 'pycfitsio.test'],
 
@@ -24,6 +24,6 @@ setup(
           'Programming Language :: Python',
           'Topic :: Scientific/Engineering :: Physics',
           ],
-    long_description=open('README').read(),
+    long_description=open('README.txt').read(),
 
 )
