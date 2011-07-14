@@ -24,6 +24,6 @@ setup(
           'Programming Language :: Python',
           'Topic :: Scientific/Engineering :: Physics',
           ],
-    long_description=open('README.rst').read(),
+    long_description=open('README').read(),
 
 )
