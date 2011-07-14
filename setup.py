@@ -6,9 +6,6 @@ setup(
 
     packages=['pycfitsio', 'pycfitsio.test'],
 
-    # Project uses reStructuredText, so ensure that the docutils get
-    # installed or upgraded on the target machine
-    install_requires = ['docutils>=0.3'],
     author = "Andrea Zonca",
     author_email = "code@andreazonca.com",
     description = "Simple FITS files I/O package",
