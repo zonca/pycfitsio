@@ -40,7 +40,6 @@ TFORM_FITS = {
 }
 
 TFORM_CTYPES = {
-    'i1':c_bool, 
     'u1':c_uint8, 
     'i2':c_int16, 
     'i4':c_int32, 
@@ -51,3 +50,8 @@ TFORM_CTYPES = {
     'c8':None,
     'c16':None
 }
+
+try:
+    TFORM_CTYPES['i1'] = c_bool
+except NameError:
+    pass
