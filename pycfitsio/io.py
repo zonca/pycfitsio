@@ -16,8 +16,11 @@ _cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
 NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
-#TODO verbose error messages
-    pass
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return "CFITSIO error with code %d: %s" % (self.value, 
+                ERRORMESSAGES.get(self.value, "Error code unknown"))
 
 def open(filename):
     """Opens fits file and returns a File object"""
@@ -43,7 +46,7 @@ def create(filename):
 
 def check_status(status):
     if status.value != 0:
-        raise CfitsioError("CFITSIO error with code %d" % status.value)
+        raise CfitsioError(status.value)
 
 def run_check_status(function, *args):
     status = c_int()
