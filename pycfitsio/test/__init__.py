@@ -4,11 +4,11 @@ import os
 import unittest
 
 hdu_content = np.empty(1000, dtype=np.dtype([
-                                    ('signal', np.double),
-                                    ('flag', np.uint8)
+                                    ('SIGNAL', np.double),
+                                    ('FLAG', np.uint8)
                                     ]))
-hdu_content['signal'] = np.arange(1000)
-hdu_content['flag'] = np.ones(1000)
+hdu_content['SIGNAL'] = np.arange(1000)
+hdu_content['FLAG'] = np.ones(1000)
 
 class TestPyCfitsIoRead(unittest.TestCase):
 
