@@ -4,37 +4,32 @@ import numpy as np
 from read import hdu_content
 import os
 
+def create_file(filename, data):
+    f = create(filename)
+    f.write_HDU("NEWDATA", data)
+    f.close()
+
 class TestPyCfitsIoWrite(unittest.TestCase):
 
     def setUp(self):
-        self.filename = "../debug/newdata.fits"
+        self.filename = "testwrite.fits"
         try:
             os.remove(self.filename)
         except:
             pass
 
     def test_create(self):
-        f = create(self.filename)
-        f.write_HDU("NEWDATA", hdu_content)
-        f.close()
-        self.assertTrue(isinstance(f, File))
+        create_file(self.filename, hdu_content)
         self.assertTrue(os.path.exists(self.filename))
 
     def test_write(self):
-        fw = create(self.filename)
-        fw.write_HDU("NEWDATA", hdu_content)
-        fw.close()
+        create_file(self.filename, hdu_content)
         with open(self.filename)  as f:
             data = f[0].read_all()
             self.assertTrue(isinstance(data, np.ndarray))
             self.assertEqual(f[0].name, "NEWDATA")
-            for name in data.dtype.names:
-                np.testing.assert_array_almost_equal(data[name], hdu_content[name])
-
-    def test_repeat_tform(self):
-        with open(self.filename)  as f:
-            array = f[0].read_column('data')
-            np.testing.assert_array_almost_equal(array, np.arange(10000))
+            for name in hdu_content.dtype.names:
+                np.testing.assert_array_almost_equal(data[name.upper()], hdu_content[name])
 
     def tearDown(self):
         try:
