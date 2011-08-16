@@ -22,7 +22,7 @@ BINARY_TBL = c_int(2)
 
 
 TFORM_NP = {'L': 'i1', 'B': 'u1', 'I': 'i2', 'J': 'i4', 'K': 'i8', 'E': 'f4',
-              'D': 'f8', 'C': 'c8', 'M': 'c16', 'A': 'a'}
+              'D': 'f8', 'C': 'c8', 'M': 'c16', 'A': 'S'}
 
 NP_TFORM = dict([[v,k] for k,v in TFORM_NP.items()])
 
@@ -46,7 +46,6 @@ TFORM_CTYPES = {
     'i8':c_int64, 
     'f4':c_float, 
     'f8':c_double, 
-    'a':c_char,
     'c8':None,
     'c16':None
 }
