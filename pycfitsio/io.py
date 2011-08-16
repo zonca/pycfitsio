@@ -13,16 +13,23 @@ from constants import *
 import ctypes.util
 
 _cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
-if not _cfitsio.name: #temporary fix for planck
+if not _cfitsio._name: #temporary fix for planck
     _cfitsio = CDLL('/project/projectdirs/planck/user/zonca/software/lib/lib/libcfitsio.so')
 NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
-#TODO verbose error messages
-    pass
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return "CFITSIO error with code %d: %s" % (self.value, 
+                ERRORMESSAGES.get(self.value, "Error code unknown"))
 
 def open(filename):
-    """Opens fits file and returns a File object"""
+    """Opens fits file and returns a File object encapsulated in a context manager,
+    so it should be called as:
+    with open(filename) as f:
+        print(f.HDUs)
+    the file will be automatically closed at the exit from with"""
     f = File(str(filename))
     f.open()
     return closing(f)
@@ -45,7 +52,7 @@ def create(filename):
 
 def check_status(status):
     if status.value != 0:
-        raise CfitsioError("CFITSIO error with code %d" % status.value)
+        raise CfitsioError(status.value)
 
 def run_check_status(function, *args):
     status = c_int()
