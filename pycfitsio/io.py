@@ -13,6 +13,8 @@ from constants import *
 import ctypes.util
 
 _cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
+if not _cfitsio.name: #temporary fix for planck
+    _cfitsio = CDLL('/project/projectdirs/planck/user/zonca/software/lib/lib/libcfitsio.so')
 NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
@@ -23,7 +25,7 @@ def open(filename):
     """Opens fits file and returns a File object"""
     f = File(str(filename))
     f.open()
-    return f
+    return closing(f)
 
 def read(filename, HDU=0):
     """Quick function for reading one HDU and header
@@ -32,7 +34,7 @@ def read(filename, HDU=0):
     Returns the data array and a header dictionary"""
 
     #TODO context manager
-    with closing(open(filename)) as f:
+    with open(filename) as f:
         return f[HDU].read_all(), f[HDU].header
 
 def create(filename):
@@ -167,14 +169,14 @@ class HDU(object):
 
     def get_header_keyword(self, name):
         self.file.move(self.num)
-        value = (c_char*50)()
+        value = (c_char*150)()
         run_check_status(_cfitsio.ffgky, self.file.ptr, TSTRING, name, byref(value) , False)
         return value.value.strip()
 
     def read_column(self, num):
         self.file.move(self.num)
         if isinstance(num, str):
-            num = self.column_names.index(num)
+            num = self.column_names.index(num.upper())
         array = np.empty(self.length, dtype=self.dtype[num])
         run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[self.fits_datatypes[num]], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(self.length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[self.dtype[num].str[1:]])), byref(NULL))
         return array
@@ -210,9 +212,9 @@ class HDU(object):
         run_check_status(_cfitsio.ffghsp, self.file.ptr, byref(keysexist), byref(numkeys))
         header = {}
         for i in range(1, keysexist.value+1):
-            name = (c_char*50)()
-            value = (c_char*50)()
-            comment = (c_char*50)()
+            name = (c_char*150)()
+            value = (c_char*150)()
+            comment = (c_char*150)()
             run_check_status(_cfitsio.ffgkyn, self.file.ptr, c_int(i), byref(name), byref(value), byref(comment))
             header[name.value] = value.value.replace("'","").strip()
         return header
@@ -222,7 +224,15 @@ class HDU(object):
         self.file.move(self.num)
         data_dtype = []
         for num, fits_datatype in enumerate(self.fits_datatypes):
-            data_dtype.append((self.get_header_keyword("TTYPE%d" % (num+1)), TFORM_NP[fits_datatype]))
+            if fits_datatype == 'S':
+                tform = self.get_header_keyword("TFORM%d" % (num+1))
+                if len(tform) > 1:
+                    length = tform[:-1]
+                else:
+                    length = '' 
+                data_dtype.append((self.get_header_keyword("TTYPE%d" % (num+1)).upper(), length + TFORM_NP[fits_datatype]))
+            else:
+                data_dtype.append((self.get_header_keyword("TTYPE%d" % (num+1)).upper(), TFORM_NP[fits_datatype]))
         return np.dtype(data_dtype)
 
     def read_all(self, asodict=False):
