@@ -40,7 +40,6 @@ TFORM_FITS = {
 }
 
 TFORM_CTYPES = {
-    'i1':c_bool, 
     'u1':c_uint8, 
     'i2':c_int16, 
     'i4':c_int32, 
@@ -166,3 +165,8 @@ ERRORMESSAGES = {
 505  : "celestial coordinate keywords not found ",
 506  : "approximate WCS keywords were calculated ",
 }
+
+try:
+    TFORM_CTYPES['i1'] = c_bool
+except NameError:
+    pass
