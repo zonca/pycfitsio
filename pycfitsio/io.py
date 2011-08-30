@@ -15,6 +15,7 @@ import ctypes.util
 _cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
 if not _cfitsio._name: #temporary fix for planck
     _cfitsio = CDLL('/project/projectdirs/planck/user/zonca/software/lib/lib/libcfitsio.so')
+
 NULL = c_double(0.)
 
 class CfitsioError(exceptions.Exception):
@@ -24,7 +25,7 @@ class CfitsioError(exceptions.Exception):
         return "CFITSIO error with code %d: %s" % (self.value, 
                 ERRORMESSAGES.get(self.value, "Error code unknown"))
 
-def open(filename):
+def open(filename, context_manager=True):
     """Opens fits file and returns a File object encapsulated in a context manager,
     so it should be called as:
     with open(filename) as f:
@@ -32,7 +33,10 @@ def open(filename):
     the file will be automatically closed at the exit from with"""
     f = File(str(filename))
     f.open()
-    return closing(f)
+    if context_manager:
+        return closing(f)
+    else:
+        return f
 
 def read(filename, HDU=0):
     """Quick function for reading one HDU and header
