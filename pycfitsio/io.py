@@ -38,15 +38,17 @@ def open(filename, context_manager=True):
     else:
         return f
 
-def read(filename, HDU=0):
+def read(filename, HDU=0, return_header=True):
     """Quick function for reading one HDU and header
 
     HDU is name or index of HDU, default 0
     Returns the data array and a header dictionary"""
 
-    #TODO context manager
     with open(filename) as f:
-        return f[HDU].read_all(), f[HDU].header
+        if return_header:
+            return f[HDU].read_all(), f[HDU].header
+        else:
+            return f[HDU].read_all()
 
 def create(filename):
     """Create a new fits file and returns a File object"""
