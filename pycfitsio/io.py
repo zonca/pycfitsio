@@ -50,6 +50,7 @@ def read(filename, HDU=0, return_header=True):
         else:
             return f[HDU].read_all()
 
+
 def create(filename):
     """Create a new fits file and returns a File object"""
     f = File(filename)
