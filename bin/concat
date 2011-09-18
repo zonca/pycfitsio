@@ -1,0 +1,25 @@
+#!/usr/bin/python
+
+from optparse import OptionParser
+import pycfitsio
+import numpy as np
+
+parser = OptionParser()
+parser.add_option("-f", "--file", dest="filename",
+                  help="write concatenated to FILE", metavar="FILE")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", default=True,
+                  help="don't print status messages to stdout")
+
+(options, args) = parser.parse_args()
+
+hdu_names = pycfitsio.open(args[0]).keys()
+
+for f in args:
+    with f as pycfitsio.open(f):
+        all = np.concatenate([all, f.read_all()], axis=0)
+
+f = pycfitsio.create(options.filename)
+for name, ext in zip(hdu_names, conc):
+    f.write_HDU(name, ext)
+f.close()
