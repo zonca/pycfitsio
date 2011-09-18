@@ -140,7 +140,7 @@ class File(object):
 
     def read_all(self):
         """Read data from all extensions and generate a list of compound arrays"""
-        return [h.read_all() for h in self.HDUs]
+        return [h.read_all() for h in self.HDUs.values()]
 
     def write_HDU_dict(self, name, data):
         """Data must be an OrderedDict of arrays"""
