@@ -138,6 +138,10 @@ class File(object):
                 contiguous_data = np.ascontiguousarray(data[colname][k:])
                 run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
 
+    def read_all(self):
+        """Read data from all extensions and generate a list of compound arrays"""
+        return [h.read_all() for h in self.HDUs]
+
     def write_HDU_dict(self, name, data):
         """Data must be an OrderedDict of arrays"""
         keywords_t = c_char_p * len(data)
