@@ -16,8 +16,6 @@ _cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
 if not _cfitsio._name: #temporary fix for planck
     _cfitsio = CDLL('/project/projectdirs/planck/user/zonca/software/lib/lib/libcfitsio.so')
 
-NULL = c_double(0.)
-
 class CfitsioError(exceptions.Exception):
     def __init__(self, value):
         self.value = value
@@ -128,7 +126,7 @@ class File(object):
         tform = keywords_t(*[NP_TFORM[data[colname].dtype.str[1:]] for colname in column_names])
         #print(tform._objects)
         ext_name = c_char_p(name)
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), byref(NULL), ext_name)
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), None, ext_name)
 
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
@@ -152,7 +150,7 @@ class File(object):
         ttype = keywords_t(*map(c_char_p, data.keys()))
         data_length = len(data.values()[0])
         tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), None, c_char_p(name))
     
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
@@ -200,7 +198,7 @@ class HDU(object):
         if isinstance(num, str):
             num = self.column_names.index(num.upper())
         array = np.empty(self.length, dtype=self.dtype[num])
-        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[self.fits_datatypes[num]], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(self.length), byref(NULL), array.ctypes.data_as(POINTER(TFORM_CTYPES[self.dtype[num].str[1:]])), byref(NULL))
+        run_check_status(_cfitsio.ffgcv, self.file.ptr, TFORM_FITS[self.fits_datatypes[num]], c_int(num+1), c_longlong(1), c_longlong(1), c_longlong(self.length), None, array.ctypes.data_as(POINTER(TFORM_CTYPES[self.dtype[num].str[1:]])), None)
         return array
 
     @property
