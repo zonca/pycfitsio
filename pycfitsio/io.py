@@ -120,11 +120,16 @@ class File(object):
 
     def write_HDU(self, name, data):
         """Data must be a numpy array with named dtype"""
-        column_names = data.dtype.names
+        column_names = data.dtype.names[:5]
+        colnames_fixed = [c.replace('_','') for c in column_names]
+    #    colnames_fixed = ['A','B','C','D','E']
         keywords_t = c_char_p * len(column_names)
-        ttype = keywords_t(*map(c_char_p, column_names))
+        ttype = keywords_t(*map(c_char_p, colnames_fixed))
+        print(ttype._objects)
         tform = keywords_t(*[NP_TFORM[data[colname].dtype.str[1:]] for colname in column_names])
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), byref(NULL), c_char_p(name))
+        print(tform._objects)
+        ext_name = c_char_p(name)
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), byref(NULL), ext_name)
 
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
@@ -265,14 +270,25 @@ class HDU(object):
         return data
 
 if __name__ == '__main__':
-    f = open("../test/data.fits")
-    print(f.HDUs)
-    print(f['DATA'])
-    self=f[0]
-    data = f["DATA"].read_column('signal')
-    a = f[0].read_all()
-    self = create('../test/newdata.fits')
-    self.write_HDU('newdata',a)
-    self.close()
-    print(f[0].header)
+    ##f = open("../test/data.fits")
+    ##print(f.HDUs)
+    ##print(f['DATA'])
+    ##self=f[0]
+    ##data = f["DATA"].read_column('signal')
+    ##a = f[0].read_all()
+    ##self = create('../test/newdata.fits')
+    ##self.write_HDU('newdata',a)
+    ##self.close()
+    ##print(f[0].header)
     #all_data = f["DATA"].read_all()
+
+    filename = '101003_ext.fits'
+    with open(filename) as f:
+        hdu_names = f.HDUs.keys()
+        all = f.read_all()
+
+    self = create('out.fits')
+    name = 'A'
+    data = all[0]
+    self.write_HDU(name, data)
+    self.close()
