@@ -120,14 +120,13 @@ class File(object):
 
     def write_HDU(self, name, data):
         """Data must be a numpy array with named dtype"""
-        column_names = data.dtype.names[:5]
-        colnames_fixed = [c.replace('_','') for c in column_names]
-    #    colnames_fixed = ['A','B','C','D','E']
+        column_names = data.dtype.names[:6]
+        colnames_fixed = [c.replace('-','_') for c in column_names]
         keywords_t = c_char_p * len(column_names)
         ttype = keywords_t(*map(c_char_p, colnames_fixed))
-        print(ttype._objects)
+        #print(ttype._objects)
         tform = keywords_t(*[NP_TFORM[data[colname].dtype.str[1:]] for colname in column_names])
-        print(tform._objects)
+        #print(tform._objects)
         ext_name = c_char_p(name)
         run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), byref(NULL), ext_name)
 
@@ -270,6 +269,7 @@ class HDU(object):
         return data
 
 if __name__ == '__main__':
+    pass
     ##f = open("../test/data.fits")
     ##print(f.HDUs)
     ##print(f['DATA'])
