@@ -118,7 +118,7 @@ class File(object):
 
     def write_HDU(self, name, data):
         """Data must be a numpy array with named dtype"""
-        column_names = data.dtype.names[:6]
+        column_names = data.dtype.names
         colnames_fixed = [c.replace('-','_') for c in column_names]
         keywords_t = c_char_p * len(column_names)
         ttype = keywords_t(*map(c_char_p, colnames_fixed))
