@@ -25,22 +25,24 @@ parser.add_option("-q", "--quiet",
 with pycfitsio.open(args[0]) as f:
     print(args[0])
     hdu_names = f.HDUs.keys()
-    all = f.read_all()
+    all = f.read_all(asodict=True)
 
 for filename in args[1:]:
     if options.verbose:
         print(filename)
     with pycfitsio.open(filename) as f:
-        for n, field in enumerate(f.read_all()):
+        for name, data in f.read_all(asodict=True).iteritems():
             try:
-                all[n] = np.concatenate([all[n], field])
+                all[name] = np.concatenate([all[name], data])
             except exceptions.TypeError:
                 if options.verbose:
                     print('SKIPPING: ' + filename)
+            except exceptions.KeyError:
+                all[name] = data
 
 f2 = pycfitsio.create(options.filename)
 for name, ext in zip(hdu_names, all):
     if options.verbose:
         print(name)
-    f2.write_HDU(name, ext)
+    f2.write_HDU_dict(name, ext)
 f2.close()
