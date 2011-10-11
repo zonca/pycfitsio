@@ -36,7 +36,7 @@ def open(filename, context_manager=True):
     else:
         return f
 
-def read(filename, HDU=0, return_header=True):
+def read(filename, HDU=0, return_header=True, asodict=False):
     """Quick function for reading one HDU and header
 
     HDU is name or index of HDU, default 0
@@ -44,9 +44,9 @@ def read(filename, HDU=0, return_header=True):
 
     with open(filename) as f:
         if return_header:
-            return f[HDU].read_all(), f[HDU].header
+            return f[HDU].read_all(asodict), f[HDU].header
         else:
-            return f[HDU].read_all()
+            return f[HDU].read_all(asodict)
 
 
 def create(filename):
@@ -139,6 +139,11 @@ class File(object):
                 coltform = NP_TFORM[np_dtype]
                 contiguous_data = np.ascontiguousarray(data[colname][k:])
                 run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
+        #for i, colname in enumerate(column_names):
+        #        np_dtype = data[colname].dtype.str[1:]
+        #        coltform = NP_TFORM[np_dtype]
+        #        contiguous_data = np.ascontiguousarray(data[colname])
+        #        run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(data.size), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
 
     def read_all(self, asodict=False):
         """Read data from all extensions and generate a list of compound arrays"""
@@ -161,6 +166,7 @@ class File(object):
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
     
+        print("Buffer size ");print(buffer_size)
         for k in range(0,len(data.values()[0]),buffer_size.value):
             if (k+buffer_size.value) > data_length:
                 buffer_size = c_long(data_length - k)
