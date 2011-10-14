@@ -125,6 +125,8 @@ class File(object):
         """Data must be an ordered dict or a list of (name, array) tuples"""
         if isinstance(data, list):
             data = OrderedDict(data)
+        elif isinstance(data, np.array):
+            data = OrderedDict((name, data[name]) for name in data.dtype.names)
         keywords_t = c_char_p * len(data)
         ttype = keywords_t(*map(c_char_p, data.keys()))
         data_length = len(data.values()[0])
