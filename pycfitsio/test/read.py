@@ -1,4 +1,5 @@
 import unittest
+from collections import OrderedDict
 from pycfitsio import *
 import numpy as np
 
@@ -50,14 +51,14 @@ class TestPyCfitsIoRead(unittest.TestCase):
     def test_all_cols(self):
         with open(self.filename) as f:
             data = f[0].read_all()
-            self.assertTrue(isinstance(data, np.ndarray))
-            self.assertEqual(data.dtype.names, hdu_content.dtype.names)
+            self.assertTrue(isinstance(data, OrderedDict))
             for name in hdu_content.dtype.names:
+                self.assertEqual(data[name].dtype.name, hdu_content[name].dtype.name)
                 np.testing.assert_array_almost_equal(data[name], hdu_content[name])
 
     def test_read(self):
-        data, header = read(self.filename)
-        self.assertTrue(isinstance(data, np.ndarray))
-        self.assertEqual(data.dtype.names, hdu_content.dtype.names)
+        data = read(self.filename)
+        self.assertIsInstance(data, OrderedDict)
         for name in hdu_content.dtype.names:
+            self.assertEqual(data[name].dtype.name, hdu_content[name].dtype.name)
             np.testing.assert_array_almost_equal(data[name], hdu_content[name])
