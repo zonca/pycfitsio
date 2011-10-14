@@ -32,6 +32,28 @@ class TestPyCfitsIoWrite(unittest.TestCase):
             for name in hdu_content.dtype.names:
                 np.testing.assert_array_almost_equal(data[name.upper()], hdu_content[name])
 
+    def test_write_tuplist(self):
+        tuplist = [(name, np.ascontiguousarray(hdu_content[name])) for name in hdu_content.dtype.names]
+        create_file(self.filename, tuplist)
+        with open(self.filename)  as f:
+            data = f[0].read_all()
+            self.assertIsInstance(data, OrderedDict)
+            self.assertEqual(f[0].name, "NEWDATA")
+            for name in hdu_content.dtype.names:
+                np.testing.assert_array_almost_equal(data[name.upper()], hdu_content[name])
+
+    def test_write_odict(self):
+        tuplist = [(name, np.ascontiguousarray(hdu_content[name])) for name in hdu_content.dtype.names]
+        odict = OrderedDict(tuplist)
+        create_file(self.filename, odict)
+        with open(self.filename)  as f:
+            data = f[0].read_all()
+            self.assertIsInstance(data, OrderedDict)
+            self.assertEqual(f[0].name, "NEWDATA")
+            for name in hdu_content.dtype.names:
+                np.testing.assert_array_almost_equal(data[name.upper()], hdu_content[name])
+
+
     def tearDown(self):
         try:
             os.remove(self.filename)
