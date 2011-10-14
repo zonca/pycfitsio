@@ -34,12 +34,17 @@ for filename in args[1:]:
         print(filename)
     with pycfitsio.open(filename) as f:
         for name, data in f.read_all().iteritems():
-            try:
-                all[name] = np.concatenate([all[name], data])
-            except exceptions.TypeError:
-                if options.verbose:
-                    print('SKIPPING: ' + filename)
-            except exceptions.KeyError:
+            if all.haskey(name): 
+                    for colname, coldata in data.iteritems():
+                        try:
+                            all[name][colname] = np.concatenate([all[name][colname], data[colname]])
+                        except exceptions.TypeError:
+                            if options.verbose:
+                                print('SKIPPING: ' + filename)
+                        #except exceptions.ValueError:
+                        #    if options.verbose:
+                        #        print('SKIPPING %s in %s' % (colname, filename))
+            else:
                 print("Found new extension %s" % name)
                 all[name] = data
 
