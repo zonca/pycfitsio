@@ -52,7 +52,7 @@ _______
 
 #. list of (name, array) tuples
 
-    >>> f.write_HDU([ 'HDUNAME', 
+    >>> f.write_HDU('HDUNAME', 
             [('firstcolname', np.arange(10)), ('seccolname', np.arange(10)**2)]
           )
 
