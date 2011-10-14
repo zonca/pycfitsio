@@ -38,9 +38,8 @@ _______
 
     >>> column_array = f['DATA'].read_column('signal')
 
-    #read columns as OrderedDict of arrays
     >>> all_columns = f['DATA'].read_all() 
-    print(all_columns)
+    >>> print(all_columns)
     OrderedDict([('signal', array([   0., 1. ....])), 'flag', array([1, 1, ....])])
 
 Writing    
@@ -49,22 +48,22 @@ _______
     >>> from collections import OrderedDict
     >>> f = pycfitsio.create('file.fits')
 
-    3 options to write HDUs:
+3 options to write HDUs:
 
-1. list of (name, array) tuples
+#. list of (name, array) tuples
 
     >>> f.write_HDU([ 'HDUNAME', 
             [('firstcolname', np.arange(10)), ('seccolname', np.arange(10)**2)]
           )
 
-1. OrderedDict keys = name values = array    
+#. OrderedDict keys = name values = array    
 
     >>> data = OrderedDict()
     >>> data['firstcolname'] = np.arange(10)
     >>> data['seccolname'] = np.arange(10)**2
     >>> f.write_HDU('HDUNAME', data)
 
-1. Compound numpy array
+#. Compound numpy array
 
     >>> data = np.ones(10, dtype = [('firstcolname', np.long), ('seccolname', np.double)])
     >>> f.write_HDU('HDUNAME', data)
