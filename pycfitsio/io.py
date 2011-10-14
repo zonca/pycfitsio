@@ -143,7 +143,7 @@ class File(object):
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
     
-        print("Buffer size ");print(buffer_size)
+        #print("Buffer size ");print(buffer_size)
         for k in range(0,len(data.values()[0]),buffer_size.value):
             if (k+buffer_size.value) > data_length:
                 buffer_size = c_long(data_length - k)
