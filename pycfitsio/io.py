@@ -36,7 +36,7 @@ def open(filename, context_manager=True):
     else:
         return f
 
-def read(filename, HDU=0, return_header=True, asodict=False):
+def read(filename, HDU=0, return_header=False):
     """Quick function for reading one HDU and header
 
     HDU is name or index of HDU, default 0
@@ -44,9 +44,9 @@ def read(filename, HDU=0, return_header=True, asodict=False):
 
     with open(filename) as f:
         if return_header:
-            return f[HDU].read_all(asodict), f[HDU].header
+            return f[HDU].read_all(), f[HDU].header
         else:
-            return f[HDU].read_all(asodict)
+            return f[HDU].read_all()
 
 
 def create(filename):
@@ -115,48 +115,16 @@ class File(object):
                 run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name, False)
             self.current_HDU = name
 
+    def read_all(self):
+        """Read data from all extensions and generate a list of compound arrays"""
+        return OrderedDict(
+        (name, h.read_all()) for name, h in self.HDUs.iteritems()
+        )
 
     def write_HDU(self, name, data):
-        """Data must be a numpy array with named dtype"""
-        column_names = data.dtype.names
-        colnames_fixed = [c.replace('-','_') for c in column_names]
-        keywords_t = c_char_p * len(column_names)
-        ttype = keywords_t(*map(c_char_p, colnames_fixed))
-        #print(ttype._objects)
-        tform = keywords_t(*[NP_TFORM[data[colname].dtype.str[1:]] for colname in column_names])
-        #print(tform._objects)
-        ext_name = c_char_p(name)
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(column_names)), byref(ttype), byref(tform), None, ext_name)
-
-        buffer_size = c_long(1)
-        run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
-
-        for k in range(0,data.size,buffer_size.value):
-            if (k+buffer_size.value) > data.size:
-                buffer_size = c_long(data.size - k)
-            for i, colname in enumerate(column_names):
-                np_dtype = data[colname].dtype.str[1:]
-                coltform = NP_TFORM[np_dtype]
-                contiguous_data = np.ascontiguousarray(data[colname][k:])
-                run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
-        #for i, colname in enumerate(column_names):
-        #        np_dtype = data[colname].dtype.str[1:]
-        #        coltform = NP_TFORM[np_dtype]
-        #        contiguous_data = np.ascontiguousarray(data[colname])
-        #        run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(data.size), contiguous_data.ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
-
-    def read_all(self, asodict=False):
-        """Read data from all extensions and generate a list of compound arrays"""
-        if asodict:
-            out = OrderedDict()
-            for name, h in self.HDUs.iteritems():
-                out[name] = h.read_all()
-        else:
-            out = [h.read_all() for h in self.HDUs.values()]
-        return out
-
-    def write_HDU_dict(self, name, data):
-        """Data must be an OrderedDict of arrays"""
+        """Data must be an ordered dict or a list of (name, array) tuples"""
+        if isinstance(data, list):
+            data = OrderedDict(data)
         keywords_t = c_char_p * len(data)
         ttype = keywords_t(*map(c_char_p, data.keys()))
         data_length = len(data.values()[0])
@@ -267,13 +235,9 @@ class HDU(object):
                 data_dtype.append((self.get_header_keyword("TTYPE%d" % (num+1)).upper(), TFORM_NP[fits_datatype]))
         return np.dtype(data_dtype)
 
-    def read_all(self, asodict=False):
-        """Read columns into numpy array"""
-        if asodict:
-            data = OrderedDict()
-        else:
-            data = np.empty(self.length, dtype=self.dtype)
-        #TODO implement buffered read
+    def read_all(self):
+        """Read columns into ordered dict"""
+        data = OrderedDict()
         for i, name in enumerate(self.column_names):
             data[name] = self.read_column(i)
         return data
