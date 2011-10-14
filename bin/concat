@@ -33,7 +33,7 @@ for filename in args[1:]:
     if options.verbose:
         print(filename)
     with pycfitsio.open(filename) as f:
-        for name, data in f.read_all(asodict=True).iteritems():
+        for name, data in f.read_all().iteritems():
             try:
                 all[name] = np.concatenate([all[name], data])
             except exceptions.TypeError:
