@@ -27,7 +27,7 @@ with pycfitsio.open(args[0]) as f:
     hdu_names = f.HDUs.keys()
     print("Extensions:")
     print(hdu_names)
-    all = f.read_all(asodict=True)
+    all = f.read_all()
 
 for filename in args[1:]:
     if options.verbose:
