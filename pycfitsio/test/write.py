@@ -1,4 +1,5 @@
 from pycfitsio import *
+from collections import OrderedDict
 import unittest
 import numpy as np
 from read import hdu_content
@@ -26,7 +27,7 @@ class TestPyCfitsIoWrite(unittest.TestCase):
         create_file(self.filename, hdu_content)
         with open(self.filename)  as f:
             data = f[0].read_all()
-            self.assertTrue(isinstance(data, np.ndarray))
+            self.assertIsInstance(data, OrderedDict)
             self.assertEqual(f[0].name, "NEWDATA")
             for name in hdu_content.dtype.names:
                 np.testing.assert_array_almost_equal(data[name.upper()], hdu_content[name])
