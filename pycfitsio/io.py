@@ -122,11 +122,18 @@ class File(object):
         )
 
     def write_HDU(self, name, data):
-        """Data must be an ordered dict or a list of (name, array) tuples"""
+        """There are 3 options for data storage:
+           * list of (name, array) tuples
+           * OrderedDict with key=name and value = array
+           * coumpound array with named fields
+           =NOTE= write_HDU makes the array contiguous, so this might involve copying all the data
+        """
         if isinstance(data, list):
             data = OrderedDict(data)
         elif isinstance(data, np.ndarray):
-            data = OrderedDict((name, np.ascontiguousarray(data[name])) for name in data.dtype.names)
+            data = OrderedDict((name, data[name]) for name in data.dtype.names)
+        for k, v in data.iteritems():
+            data[k] = np.ascontiguousarray(v)
         keywords_t = c_char_p * len(data)
         ttype = keywords_t(*map(c_char_p, data.keys()))
         data_length = len(data.values()[0])
