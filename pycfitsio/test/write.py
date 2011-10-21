@@ -6,9 +6,8 @@ from read import hdu_content
 import os
 
 def create_file(filename, data):
-    f = create(filename)
-    f.write_HDU("NEWDATA", data)
-    f.close()
+    with create(filename) as f:
+        f.write_HDU("NEWDATA", data)
 
 class TestPyCfitsIoWrite(unittest.TestCase):
 
