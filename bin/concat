@@ -34,7 +34,7 @@ for filename in args[1:]:
         print(filename)
     with pycfitsio.open(filename) as f:
         for name, data in f.read_all().iteritems():
-            if all.haskey(name): 
+            if all.has_key(name): 
                     for colname, coldata in data.iteritems():
                         try:
                             all[name][colname] = np.concatenate([all[name][colname], data[colname]])

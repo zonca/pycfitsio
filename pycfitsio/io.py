@@ -48,12 +48,22 @@ def read(filename, HDU=0, return_header=False):
         else:
             return f[HDU].read_all()
 
+def write(filename, HDUs):
+    """Quick function for writing an Ordered dict of Ordered dicts/compound arrays
+    to file as extensions and columns"""
 
-def create(filename):
+    with create(filename) as f:
+        for name,data in HDUs.iteritems():
+            f.write_HDU(name, data)
+
+def create(filename, context_manager=True):
     """Create a new fits file and returns a File object"""
     f = File(filename)
     f.create()
-    return f
+    if context_manager:
+        return closing(f)
+    else:
+        return f
 
 def check_status(status):
     if status.value != 0:
