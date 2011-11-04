@@ -9,8 +9,8 @@ def read_map(filename, HDU=0, field=0, nest=False):
     all columns of the specified HDU are read into a compound numpy MASKED array
     if nest is not None, the map is converted if need to NEST or RING ordering.
     this function requires healpy"""
-    m, h = read(filename, HDU=HDU)
-    m = m[m.dtype.names[0]]
+    m, h = read(filename, HDU=HDU, return_header=True)
+    m = m.values()[field]
     nside = healpy.npix2nside(m.size)
     if not nest is None:
         if h.get('ORDERING', False):
