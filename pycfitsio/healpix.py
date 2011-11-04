@@ -21,3 +21,7 @@ def read_map(filename, HDU=0, field=0, nest=False):
                 idx = healpy.nest2ring(nside,np.arange(m.size,dtype=np.int32))
                 m = m[idx]
     return healpy.ma(m)
+
+def read_mask(filename, HDU=0, field=0, nest=False):
+    m = read_map(filename, HDU, field, nest)
+    return np.logical_not(m.filled()).astype(np.bool)

@@ -1,5 +1,7 @@
+import warnings
 from io import File, open, read, create, write, CfitsioError  
-try: #read_map available only if healpy is installed
-    from healpix import read_map
+try:
+    from healpix import read_map, read_mask
 except:
+    warnings.warn('Cannot import read_map and read_mask if healpy is not installed')
     pass
