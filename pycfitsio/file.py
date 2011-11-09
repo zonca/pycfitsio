@@ -1,10 +1,11 @@
+import os
+import warnings
 import numpy as np
 import exceptions
 try:
     from collections import OrderedDict
 except exceptions.ImportError:
     from ordereddict import OrderedDict
-from contextlib import closing
 from ctypes import *
 
 from decorator import cache
@@ -23,18 +24,16 @@ class CfitsioError(exceptions.Exception):
         return "CFITSIO error with code %d: %s" % (self.value, 
                 ERRORMESSAGES.get(self.value, "Error code unknown"))
 
-def open(filename, context_manager=True):
-    """Opens fits file and returns a File object encapsulated in a context manager,
-    so it should be called as:
+def open(filename):
+    """Opens fits file and returns a File object,
+    so can be called using with:
     with open(filename) as f:
         print(f.HDUs)
-    the file will be automatically closed at the exit from with"""
-    f = File(str(filename))
-    f.open()
-    if context_manager:
-        return closing(f)
-    else:
-        return f
+    the file will be automatically closed at the exit from with
+    or directly:
+    f = open(filename)
+    """
+    return File(filename)
 
 def read(filename, HDU=0, return_header=False):
     """Quick function for reading one HDU and header
@@ -56,14 +55,9 @@ def write(filename, HDUs):
         for name,data in HDUs.iteritems():
             f.write_HDU(name, data)
 
-def create(filename, context_manager=True):
+def create(filename):
     """Create a new fits file and returns a File object"""
-    f = File(filename)
-    f.create()
-    if context_manager:
-        return closing(f)
-    else:
-        return f
+    return File(filename)
 
 def check_status(status):
     if status.value != 0:
@@ -82,9 +76,17 @@ class File(object):
         self.ptr = c_voidp()
         self.filename = filename
         self.current_HDU = None
+        self.open_or_create()
 
     def __repr__(self):
         return "Fits FILE: %s" % self.filename
+
+    def open_or_create(self):
+        if os.path.exists(self.filename):
+            self.open()
+        else:
+            print('Creating file %s' % self.filename)
+            self.create()
 
     def open(self):
         run_check_status(_cfitsio.ffopen, byref(self.ptr), self.filename, False)
@@ -101,6 +103,13 @@ class File(object):
             return self.HDUs.values()[key]
         else:
             return self.HDUs[key]
+
+    # context management
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        self.close()
 
     @cache
     def HDUs(self):
