@@ -27,19 +27,24 @@ with pycfitsio.open(args[0]) as f:
     hdu_names = f.HDUs.keys()
     print("Extensions:")
     print(hdu_names)
-    all = f.read_all(asodict=True)
+    all = f.read_all()
 
 for filename in args[1:]:
     if options.verbose:
         print(filename)
     with pycfitsio.open(filename) as f:
-        for name, data in f.read_all(asodict=True).iteritems():
-            try:
-                all[name] = np.concatenate([all[name], data])
-            except exceptions.TypeError:
-                if options.verbose:
-                    print('SKIPPING: ' + filename)
-            except exceptions.KeyError:
+        for name, data in f.read_all().iteritems():
+            if all.has_key(name): 
+                    for colname, coldata in data.iteritems():
+                        try:
+                            all[name][colname] = np.concatenate([all[name][colname], data[colname]])
+                        except exceptions.TypeError:
+                            if options.verbose:
+                                print('SKIPPING: ' + filename)
+                        #except exceptions.ValueError:
+                        #    if options.verbose:
+                        #        print('SKIPPING %s in %s' % (colname, filename))
+            else:
                 print("Found new extension %s" % name)
                 all[name] = data
 
