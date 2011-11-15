@@ -2,7 +2,7 @@ import numpy as np
 
 import healpy
 
-from io import read
+from file import read
 
 def read_map(filename, HDU=0, field=0, nest=False):
     """Read Healpix map

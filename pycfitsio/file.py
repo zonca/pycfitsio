@@ -57,7 +57,7 @@ def write(filename, HDUs):
 
 def create(filename):
     """Create a new fits file and returns a File object"""
-    return File(filename)
+    return File(filename, overwrite=True)
 
 def check_status(status):
     if status.value != 0:
@@ -72,21 +72,18 @@ def run_check_status(function, *args):
 
 class File(object):
 
-    def __init__(self, filename):
+    def __init__(self, filename, overwrite=False):
         self.ptr = c_voidp()
-        self.filename = filename
+        self.filename = str(filename) #to avoid unicode
         self.current_HDU = None
-        self.open_or_create()
-
-    def __repr__(self):
-        return "Fits FILE: %s" % self.filename
-
-    def open_or_create(self):
-        if os.path.exists(self.filename):
+        if os.path.exists(self.filename) and not overwrite:
             self.open()
         else:
             print('Creating file %s' % self.filename)
             self.create()
+
+    def __repr__(self):
+        return "Fits FILE: %s" % self.filename
 
     def open(self):
         run_check_status(_cfitsio.ffopen, byref(self.ptr), self.filename, False)

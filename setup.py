@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name = "pycfitsio",
-    version = "0.2.1",
+    version = "0.3.0",
 
     packages=['pycfitsio', 'pycfitsio.test'],
 
