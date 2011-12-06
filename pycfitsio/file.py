@@ -150,6 +150,8 @@ class File(object):
             data = OrderedDict((name, data[name]) for name in data.dtype.names)
         for k, v in data.iteritems():
             data[k] = np.ascontiguousarray(v)
+            if data[k].dtype.byteorder == '>':
+                data[k]=data[k].byteswap()
         keywords_t = c_char_p * len(data)
         ttype = keywords_t(*map(c_char_p, data.keys()))
         data_length = len(data.values()[0])

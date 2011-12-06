@@ -31,6 +31,13 @@ class TestPyCfitsIoWrite(unittest.TestCase):
             for name in hdu_content.dtype.names:
                 np.testing.assert_array_almost_equal(data[name.upper()], hdu_content[name])
 
+    def test_write_bigendian(self):
+        longarray = np.arange(np.long(1e18), np.long(1e18)+1000, dtype='>i8')
+        create_file(self.filename, OrderedDict({'longfield': longarray}))
+        with open(self.filename)  as f:
+            data = f[0].read_all()
+            np.testing.assert_array_almost_equal(data['LONGFIELD'], longarray)
+
     def test_write_tuplist(self):
         tuplist = [(name, np.ascontiguousarray(hdu_content[name])) for name in hdu_content.dtype.names]
         create_file(self.filename, tuplist)
