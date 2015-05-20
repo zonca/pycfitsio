@@ -1,23 +1,26 @@
+
 import os
-import warnings
 import numpy as np
-import exceptions
+try:
+    from exceptions import ImportError, Exception
+except:
+    pass
 try:
     from collections import OrderedDict
-except exceptions.ImportError:
+except ImportError:
     from ordereddict import OrderedDict
 from ctypes import *
 
-from decorator import cache
+from .decorator import cache
 
-from constants import *
+from .constants import *
 import ctypes.util
 
-_cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
-if not _cfitsio._name: #temporary fix for planck
-    _cfitsio = CDLL('/project/projectdirs/planck/user/zonca/software/lib/lib/libcfitsio.so')
+#_cfitsio = CDLL(ctypes.util.find_library("cfitsio"))
+#if not _cfitsio._name: #temporary fix for planck
+_cfitsio = CDLL('/global/project/projectdirs/planck/software/zonca/software/pycfitsio/pycfitsio/cfitsio/libcfitsio.so')
 
-class CfitsioError(exceptions.Exception):
+class CfitsioError(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
@@ -86,10 +89,10 @@ class File(object):
         return "Fits FILE: %s" % self.filename
 
     def open(self):
-        run_check_status(_cfitsio.ffopen, byref(self.ptr), self.filename, False)
+        run_check_status(_cfitsio.ffopen, byref(self.ptr), self.filename.encode('ascii'), False)
 
     def create(self):
-        run_check_status(_cfitsio.ffinit, byref(self.ptr), '!'+self.filename)
+        run_check_status(_cfitsio.ffinit, byref(self.ptr), ('!'+self.filename).encode('ascii'))
 
     def close(self):
         run_check_status(_cfitsio.ffclos, self.ptr)
@@ -97,7 +100,7 @@ class File(object):
     def __getitem__(self, key):
         """Returns HDU by name or index"""
         if isinstance(key, int):
-            return self.HDUs.values()[key]
+            return list(self.HDUs.values())[key]
         else:
             return self.HDUs[key]
 
@@ -117,7 +120,7 @@ class File(object):
         for i in range(2, hdunum.value+1):
             run_check_status(_cfitsio.ffmahd, self.ptr, c_int(i), byref(hdutype))
             hdu = HDU(i-2, file=self)
-            _HDUs[hdu.name] = hdu
+            _HDUs[hdu.name]= hdu
         return _HDUs
 
     def move(self, name):
@@ -128,13 +131,13 @@ class File(object):
             elif name.startswith('HDU'):
                 self.move(int(name[-1]))
             else:
-                run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name, False)
+                run_check_status(_cfitsio.ffmnhd, self.ptr, BINARY_TBL, name.encode('ascii'), False)
             self.current_HDU = name
 
     def read_all(self):
         """Read data from all extensions and generate a list of compound arrays"""
         return OrderedDict(
-        (name, h.read_all()) for name, h in self.HDUs.iteritems()
+        (name, h.read_all()) for name, h in self.HDUs.items()
         )
 
     def write_HDU(self, name, data):
@@ -191,14 +194,14 @@ class HDU(object):
     def get_header_key(self, name):
         self.file.move(self.num)
         value = c_long()
-        run_check_status(_cfitsio.ffgky, self.file.ptr, TLONG, name, byref(value), False)
+        run_check_status(_cfitsio.ffgky, self.file.ptr, TLONG, name.encode('ascii'), byref(value), False)
         return value.value
 
     def get_header_keyword(self, name):
         self.file.move(self.num)
         value = (c_char*150)()
-        run_check_status(_cfitsio.ffgky, self.file.ptr, TSTRING, name, byref(value) , False)
-        return value.value.strip()
+        run_check_status(_cfitsio.ffgky, self.file.ptr, TSTRING, name.encode('ascii'), byref(value) , False)
+        return value.value.strip().decode("ascii")
 
     def read_column(self, num):
         self.file.move(self.num)
@@ -219,7 +222,7 @@ class HDU(object):
         #check repeat
         tform = self.get_header_keyword("TFORM1")
         if len(tform) > 1:
-            length *= long(tform[:-1])
+            length *= int(tform[:-1])
         return length
 
     @cache

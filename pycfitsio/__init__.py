@@ -1,6 +1,6 @@
 import warnings
 
-from file import File, open, read, create, write, CfitsioError  
+from .file import File, open, read, create, write, CfitsioError  
 try:
     from healpix import read_map, read_mask
 except:
