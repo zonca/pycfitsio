@@ -55,7 +55,7 @@ def write(filename, HDUs):
     to file as extensions and columns"""
 
     with create(filename) as f:
-        for name,data in HDUs.iteritems():
+        for name,data in HDUs.items():
             f.write_HDU(name, data)
 
 def create(filename):
@@ -151,24 +151,24 @@ class File(object):
             data = OrderedDict(data)
         elif isinstance(data, np.ndarray):
             data = OrderedDict((name, data[name]) for name in data.dtype.names)
-        for k, v in data.iteritems():
+        for k, v in data.items():
             data[k] = np.ascontiguousarray(v)
             if data[k].dtype.byteorder == '>':
                 data[k]=data[k].byteswap()
         keywords_t = c_char_p * len(data)
-        ttype = keywords_t(*map(c_char_p, data.keys()))
-        data_length = len(data.values()[0])
-        tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]] for col in data.values()])
-        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), None, c_char_p(name))
+        ttype = keywords_t(*[c_char_p(a.encode('ascii')) for a in data.keys()])
+        data_length = len(list(data.values())[0])
+        tform = keywords_t(*[NP_TFORM[col.dtype.str[1:]].encode('ascii') for col in data.values()])
+        run_check_status(_cfitsio.ffcrtb, self.ptr, BINARY_TBL, c_longlong(0), c_int(len(data)), byref(ttype), byref(tform), None, c_char_p(name.encode('ascii')))
     
         buffer_size = c_long(1)
         run_check_status(_cfitsio.ffgrsz, self.ptr, byref(buffer_size))
     
         #print("Buffer size ");print(buffer_size)
-        for k in range(0,len(data.values()[0]),buffer_size.value):
+        for k in range(0,len(list(data.values())[0]),buffer_size.value):
             if (k+buffer_size.value) > data_length:
                 buffer_size = c_long(data_length - k)
-            for i, (colname, colarray) in enumerate(data.iteritems()):
+            for i, (colname, colarray) in enumerate(data.items()):
                 np_dtype = colarray.dtype.str[1:]
                 coltform = NP_TFORM[np_dtype]
                 run_check_status(_cfitsio.ffpcl, self.ptr, TFORM_FITS[coltform], c_int(i+1), c_longlong(1+k), c_longlong(1), c_longlong(buffer_size.value), colarray[k:].ctypes.data_as(POINTER(TFORM_CTYPES[np_dtype])))
