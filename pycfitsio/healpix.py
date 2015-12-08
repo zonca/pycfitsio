@@ -1,4 +1,5 @@
 import numpy as np
+import exceptions
 
 import healpy
 
@@ -10,7 +11,10 @@ def read_map(filename, HDU=0, field=0, nest=False):
     if nest is not None, the map is converted if need to NEST or RING ordering.
     this function requires healpy"""
     m, h = read(filename, HDU=HDU, return_header=True)
-    m = m.values()[field]
+    try:
+        m = m[field]
+    except exceptions.KeyError:
+        m = m.values()[field]
     nside = healpy.npix2nside(m.size)
     if not nest is None:
         if h.get('ORDERING', False):
